@@ -134,6 +134,14 @@ PathwayAnalysis <- function(species, annotation, filter, target, database, minCu
       row.names = FALSE
     )
   
+
+    browser()
+    GoPheno <- AnnotatedDataFrame(design)
+    GoExpr <- ExpressionSet(logCPM, design)
+    GoData <- GO_analyse(GoExpr, f="Group", method = "rf")
+  
+  
+  
   #Download and load desired gene sets
   download.file(
     paste0("http://bioinf.wehi.edu.au/software/MSigDB/human_",database,"_v5p2.rdata"),

@@ -509,7 +509,12 @@ server <- function(input,output, session) {
     #Processing for Essentiality Tab
     if(input$allTabs == "essentiality" | input$allTabs == "mysql") {
     
-      
+      if(input$searchMode == "GeneTracks") {
+        removeUI(selector = "#searchInputsDownload")
+        removeUI(selector = "#trackDownloadButton")
+        removeUI(selector = "#trackDownload")
+        removeUI(selector = "#searchData")
+      }
       
       pool <- dbPool(drv = RMariaDB::MariaDB(), user = "root", password = "wellslab123",
                      dbname = "shinyApp", host = "localhost", port = 3306)
@@ -788,7 +793,6 @@ server <- function(input,output, session) {
       }
       
       svgName <- paste0(input$dataSearch, "Track.png")
-      browser()
         png(svgName)
       plotTokeep <- ggplot(data = relevantResults,
                            aes(x = GeneID, y = LogFC, names.arg)) + 
@@ -830,13 +834,21 @@ server <- function(input,output, session) {
       output$searchDownload <- renderUI(
         downloadButton("searchInputsDownload", "Download Project Inputs (~3 min)")
       )
-    } else if(input$searchMode == "GeneTracks"){
+      removeUI(selector = "#trackDownload")
+    } else if(input$searchMode == "DiffExp") {
+      
+      removeUI(selector = "#trackDownload")
+    }
+    else if(input$searchMode == "GeneTracks"){
       output$trackDownload <- renderUI(
         downloadButton("trackDownloadButton", "Download picture of track")
       )
+      removeUI(selector = "#searchData")
     } else {
       removeUI(selector = "#searchInputsDownload")
       removeUI(selector = "#trackDownloadButton")
+      removeUI(selector = "#trackDownload")
+      removeUI(selector = "#searchData")
     }
   })
   
@@ -1655,12 +1667,12 @@ server <- function(input,output, session) {
         if(input$species == "hsapiens_gene_ensembl") {
         tmpCounts <<- featureCounts(input$bamInputs$datapath, annot.inbuilt = "hg38",
                                    isPairedEnd = TRUE,
-                                   annot.ext = "/srv/shiny-server/guiWork/shinyApp/data/gencode.v31.annotation.gtf",
+                                   annot.ext = "data/gencode.v31.annotation.gtf",
                                    isGTFAnnotationFile = TRUE)
         } else {
           tmpCounts <<- featureCounts(input$bamInputs$datapath, annot.inbuilt = "mm10",
                                      isPairedEnd = TRUE,
-                                     annot.ext = "/srv/shiny-server/guiWork/shinyApp/data/gencode.vM22.annotation.gtf",
+                                     annot.ext = "data/gencode.vM22.annotation.gtf",
                                      isGTFAnnotationFile = TRUE)
         }
         colnames(tmpCounts$counts) <<- file_path_sans_ext(input$bamInputs$name)
