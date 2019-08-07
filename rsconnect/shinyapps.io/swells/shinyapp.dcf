@@ -1,0 +1,10 @@
+name: shinyapp
+title:
+username:
+account: swells
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 965234
+bundleId: 2211871
+url: https://swells.shinyapps.io/shinyapp/
+when: 1562614986.8189
