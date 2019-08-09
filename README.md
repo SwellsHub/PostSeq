@@ -83,17 +83,22 @@ Further instructions for the process of hosting a local instance of PostSeq can 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
+**Overview**
 PostSeq's main workflow consists of uploading your sequencing data (comma delimited counts file or BAM file), generating the experimental design from this data, choosing the desired forms of analysis, and submitting.
 
 Once you have uploaded a data set to MySQL additional forms of analysis are opened up in the MySQL and Essentiality tabs of the app.
 
+**Sequence Data Upload**
 If you are uploading a personal counts file, it needs to be a csv with the first column consisting of gene ids and the first row consisting of sample names. Each subsequent row should contain the raw counts for the correct gene and sample.
 
 If you are uploading BAM files, choose all bam files to be processed after selecting the uploading BAM files checkbox and the 
 "choose all BAM files to upload" file input. Please note that due to the size of BAM files, this upload process will take some time. Once Bam files have been uploaded, the generated counts file can be downloaded so the BAM files will not have to be uploaded in future analysis.
 
+**Experimental Design Generation**
 After uploading your sequence data, it is time to generate your experimental design (design matrix).
 Selecting "Let me autofill sample data" will automatically populate the sample names boxes on the right side of the app with the column names from your counts file. This is recommended as it avoids any naming inconsistencies between the counts and experimental design file. If you wish to input samples manually, modify the "Number of Samples" numeric input and then enter each sample name in the sample names boxes. Note that the sample names in these boxes and your counts file must match **exactly**!
+
+**Selecting Classifiers**
 
 
 
