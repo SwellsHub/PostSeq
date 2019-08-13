@@ -103,7 +103,31 @@ Selecting "Let me autofill sample data" will automatically populate the sample n
 
 **Selecting Classifiers**
 
-Now that your main inputs are sorted, you need to choose the classifiers that match your input data. Choose the species and gene annotation that match your sequencing data. If you generated counts from a BAM file, your annotation format will be "HGNC_Symbol"
+Now that your main inputs are sorted, you need to choose the classifiers that match your input data. Choose the species and gene annotation that match your sequencing data. If your counts are from a BAM file, your annotation format will be "HGNC_Symbol".
+Currently supported species are human and mouse, and currently supported annotation formats are Ensembl_gene_id, hgnc_symbol, entrezid, and MGI symbol.
+
+**Choosing Whether to Upload to MySQL**
+
+If you want to rerun your analysis in the future or use any of the extended analysis functions in the MySQL and Essentiality tabs of the app, you should upload your data to the MysQL database. After choosing to upload your data, you will need to input a ProjectID, description, and date to be stored in the database. When the analysis is run, your counts file, experimental design file, and differential expression file will be stored in the database. You can then retrieve and analyze the updated data as described [here](#extended-analysis). Important Note: do not upload the same analysis data multiple times. This will cause the database to be filled with redundant information.
+
+**Choosing Outputs to Include in Analysis**
+
+There are a variety of outputs you can include with your analysis to explore your data. The four primary outputs are differential expression using limma, pathway analysis using either CAMERA or GO, principal component analysis, and volcano plots. Some of these primary outputs will have specific options and parameters. In addition to these primary outputs, there are a number of secondary outputs which are generated from the results of the primary analysis.
+These options and secondary analysis are described here and grouped by their respective primary analysis:
+
+ 1. Differential Expression
+  * Options:
+    * Gene Filtering: Choose to filter out genes where the counts across all samples do not meet a certain threshold.
+    
+  * Secondary Analysis:
+    * Clustering Effects: The differential expression data can be clustered into groups of 3 or more genes sufficiently close to
+    each other on a chromosome. This analysis includes a csv of all the detected clusters, a histogram with the average distance
+    between genes in each cluster, and a chromosomal map that will visualize the positions of the clusters. The clustering
+    analysis has the following options:
+      * MinGenes: Minimum number of genes to consider a cluster
+      * MaxDistance: Maximum distance between two genes in a cluster (base pairs) 
+      * MaxFDR: Only consider genes with an FDR at or below this value
+      * MinLogFC: Only consider genes with a LogFC magnitude (absolute value) at or above this value
 
 
 ### Manual Installation Prerequisites
