@@ -7,6 +7,13 @@ EssentialityClusters <- function(chosenProj, chosenComp, chosenGene, chosenCellL
 library(dplyr)
 library(ggpubr)
 
+#Check if any cell lines have been selected
+  browser()
+if(length(chosenCellLines) == 0) {
+  shinyalert("Bad News", "You didn't select any cell lines. Select some cell lines and rerun the analysis")
+  return("error")
+}  
+  
 #Load Project Achilles Data
 achillesData <- read.table("ExpandedGeneZSolsCleaned.csv", sep =",", stringsAsFactors = FALSE)
 
@@ -27,7 +34,7 @@ tmpFilters <- c()
 
 #Filter to chosen cell lines
 for(i in 1:length(chosenCellLines)) {
-  tmpFilters[[i]] <- select(achillesData,contains(toupper(chosenCellLines[i])))
+  tmpFilters[[i]] <- dplyr::select(achillesData,contains(toupper(chosenCellLines[i])))
   if(i == 1) {
     filteredCellLines <- tmpFilters[[1]]
   } else {
@@ -36,8 +43,15 @@ for(i in 1:length(chosenCellLines)) {
 }
 
 #Obtain vector of values for chosen gene to find correlation
+
 x <- as.numeric(as.character(filteredCellLines[row.names(filteredCellLines) == toupper(chosenGene),]),
                 stringsAsFactors = FALSE)
+
+checkNA <- is.na(x)
+if(length(checkNA[checkNA == TRUE]) == length(x)) {
+  shinyalert("Bad News", "That gene could not be found in the selected comparison. Check for typos, or try a different gene", type = "error")
+  return("error")
+}
 
 #Calculate Pearson Correlation Coefficients for all genes relative to chosen gene
 corCoefficients <- matrix(ncol = 2, nrow = nrow(filteredCellLines))
@@ -100,13 +114,18 @@ dev.off()
 
 ensembl <- useEnsembl(biomart = ("ensembl"), dataset = "hsapiens_gene_ensembl", mirror = "uswest")
 
+tryCatch(
 Conversion <-
   getBM(
     attributes = c("hgnc_symbol", 'entrezgene_id'),
     filters = "hgnc_symbol",
     values = demoTable$GeneID,
     mart = ensembl
-  )
+  ), error = function (err) {
+    shinyalert("Bad News", "The Biomart servers may be down right now! If you are sure your inputs are correct, wait 30 minutes then try again. If this still fails, contact spencerwells@gmail.com", type = "error")
+    return("error")
+  }
+)
 colnames(Conversion)[1] <- "GeneID"
 
 demoTable <- merge(Conversion, demoTable, by = "GeneID")

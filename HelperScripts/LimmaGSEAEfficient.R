@@ -1,7 +1,7 @@
 
 
 DifferentialExpression <- function(species, annotation, filter, target, minCutoff, makeVolc, mysqlUpload) {
-browser()
+
 #Import Libraries
 library(edgeR)
 library(limma)
@@ -52,12 +52,17 @@ if(stri_cmp_eq(annotation, "hgnc_symbol") || stri_cmp_eq(annotation, "mgi_symbol
 
 ensembl <- useEnsembl(biomart = ("ensembl"), dataset = species, mirror = 'useast')
 if (stri_cmp_eq(species, "hsapiens_gene_ensembl")) {
+  tryCatch(
 Conversion <-
   getBM(
     attributes = c(as.character(annotation), 'hgnc_symbol'),
     filters = as.character(annotation),
     values = rownames(filter),
     mart = ensembl
+  ), error = function (err) {
+    shinyalert("Bad News", "The Biomart servers may be down right now! If you are sure your inputs are correct, wait 30 minutes then try again. If this still fails, contact spencerwells@gmail.com", type = "error")
+    return("error")
+  }
   )
 Conversion <-
   Conversion[order(Conversion[annotation]), , drop = FALSE]
@@ -73,12 +78,17 @@ rownames(finalsheet) <- finalsheet$hgnc_symbol
 finalsheet <- finalsheet[2:(ncol(finalsheet) - 1)]
 
 } else if(stri_cmp_eq(species, "mmusculus_gene_ensembl")) {
+  tryCatch(
   Conversion <-
     getBM(
       attributes = c(as.character(annotation), 'mgi_symbol'),
       filters = as.character(annotation),
       values = rownames(filter),
       mart = ensembl
+    ), error = function (err) {
+      shinyalert("Bad News", "The Biomart servers may be down right now! If you are sure your inputs are correct, wait 30 minutes then try again. If this still fails, contact spencerwells@gmail.com", type = "error")
+      return("error")
+    }
     )
   Conversion <-
     Conversion[order(Conversion[annotation]), , drop = FALSE]
@@ -102,6 +112,7 @@ x <- finalsheet
 #Make matrix of labels for design of experiment and intended pairwise comparisons
 
 #Factor group column of target file to construct design matrix
+target <- data.frame(target)
 design <- model.matrix( ~ target$Group + 0)
 
 #Extract the relevant contrasts of the experiment from the third column of the target file
@@ -117,8 +128,16 @@ for(y in 1:length(contrasts)) {
 target$Group <- factor(target$Group)
 colnames(design) <- sort(as.character(levels(target$Group)))
 contrasts <- na.omit(contrasts)
-contrast.matrix <-
-  makeContrasts(contrasts = contrasts,  levels = design)
+
+
+tryCatch(contrast.matrix <-
+  makeContrasts(contrasts = contrasts,  levels = design), error = function(err) {
+    shinyalert("Bad News", "Your experimental design is malformed. Check if there are any typos in your groups and/or comparisons, then make sure you are using syntactically valid names (cannot start with a number, no special characters besides . and _)", type = "error")
+    shinyjs::toggle("downloadMessage")
+    return("error")
+  })
+
+
 
 
 
@@ -193,23 +212,33 @@ for (i in seq(from = 1, to = ncol(contrast.matrix))) {
   ensembl <- useEnsembl(biomart = ("ensembl"), dataset = species, mirror = 'uswest')
   
   if(species == "hsapiens_gene_ensembl") {
+    tryCatch(
   LocationConversion <-
     getBM(
       attributes = c('hgnc_symbol', 'chromosome_name', 'start_position', 'end_position', 'strand'),
       filters = "hgnc_symbol",
       values = rownames(logCPM$E),
       mart = ensembl
+    ), error = function (err) {
+      shinyalert("Bad News", "The Biomart servers may be down right now! If you are sure your inputs are correct, wait 30 minutes then try again. If this still fails, contact spencerwells@gmail.com", type = "error")
+      return("error")
+    }
     )
   LocationConversion <-
     LocationConversion[order(LocationConversion['hgnc_symbol']), , drop = FALSE]
   } else {
+    tryCatch(
     LocationConversion <-
       getBM(
         attributes = c('mgi_symbol', 'chromosome_name', 'start_position', 'end_position', 'strand'),
         filters = "mgi_symbol",
         values = rownames(logCPM$E),
         mart = ensembl
-      )
+      ), error = function (err) {
+        shinyalert("Bad News", "The Biomart servers may be down right now! If you are sure your inputs are correct, wait 30 minutes then try again. If this still fails, contact spencerwells@gmail.com", type = "error")
+        return("error")
+      }
+    )
     LocationConversion <-
       LocationConversion[order(LocationConversion['mgi_symbol']), , drop = FALSE]
   }
@@ -252,7 +281,7 @@ for (i in seq(from = 1, to = ncol(contrast.matrix))) {
   
   if(mysqlUpload == 1) {
     #Establish a connection to the database
-    browser()
+
     pool <- dbPool(drv = RMariaDB::MariaDB(), user = "root", password = "wellslab123",
                    dbname = "shinyApp", host = "localhost", port = 3306)
     
@@ -298,19 +327,19 @@ for (i in seq(from = 1, to = ncol(contrast.matrix))) {
       
       status <- data.frame(row.names = rownames(FinalTable))
       
-      pos <- res2[(res2$adj.P.Val < .05 & res2$logFC > 0), ]
+      pos <- res2[(as.numeric(res2$adj.P.Val) < .05 & as.numeric(res2$logFC) > 0), ]
       if(length(pos$logFC != 0)) {
         pos$result <- 1
         pos <- pos[10]
       }
       
-      neg <- res2[(res2$adj.P.Val < .05 & res2$logFC < 0), ]
+      neg <- res2[(as.numeric(res2$adj.P.Val) < .05 & as.numeric(res2$logFC) < 0), ]
       if(length(neg$logFC != 0)) {
         neg$result <- -1
         neg <- neg[10]
       }
       
-      zeroes <- res2[res2$adj.P.Val >= .05, ]
+      zeroes <- res2[as.numeric(res2$adj.P.Val) >= .05, ]
       if(length(zeroes$logFC != 0)) {
         zeroes$result <- 0
         zeroes <- zeroes[10]
@@ -329,7 +358,7 @@ for (i in seq(from = 1, to = ncol(contrast.matrix))) {
       
      
       xAxis <- res2$logFC
-      yAxis <- -log10(res2$adj.P.Val)
+      yAxis <- -log10(as.numeric(res2$adj.P.Val))
       
       df <- matrix(nrow = nrow(res2), ncol = 2)
       

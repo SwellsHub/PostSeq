@@ -26,18 +26,22 @@ library("Rsubread")
 library("ggplot2")
 library("chromoMap")
 library("filesstrings")
+library("clusterProfiler")
+library("org.Hs.eg.db")
+library("tools")
+library("shinyalert")
 
 
 
 # Source Relevant R Scripts
-source("LimmaGSEAEfficient.R")
-source("CameraPathwayAnalysis.R")
-source("PCAPlot.R")
-source("wordClouds.R")
-source("GeneNeighbors.R")
-source("ClusterPlots.R")
-source("ChromChart.R")
-source("AchillesAnalysis.R")
+source("HelperScripts/LimmaGSEAEfficient.R")
+source("HelperScripts/CameraPathwayAnalysis.R")
+source("HelperScripts/PCAPlot.R")
+source("HelperScripts/wordClouds.R")
+source("HelperScripts/GeneNeighbors.R")
+source("HelperScripts/ClusterPlots.R")
+source("HelperScripts/ChromChart.R")
+source("HelperScripts/AchillesAnalysis.R")
 
 #Read in supplementary files for wordclouds
 blackList <-
@@ -69,6 +73,9 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                 
                 #Use JS    
                 useShinyjs(),
+                
+                #Use Enhanced Modals
+                useShinyalert(),
                 
                 #Include JS Script
                 includeScript("www/check.js"),
@@ -110,6 +117,14 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                   "img {width: 100%; min-width: 200px; min-height: 200px; max-width: 550px; max-height: 500px; height: 100%;}"
                 )),
                 tags$head(tags$style(HTML("#helpLink {color: blue}"))),
+                tags$head(tags$style(HTML("#designHelp {color: blue}"))),
+                tags$head(tags$style(HTML("#classHelp {color: blue}"))),
+                tags$head(tags$style(HTML("#mysqlHelp {color: blue}"))),
+                tags$head(tags$style(HTML("#overlapHelp {color: blue}"))),
+                tags$head(tags$style(HTML("#outputHelp {color: blue}"))),
+                tags$head(tags$style(HTML("#posChromChartHelp {color: blue}"))),
+                tags$head(tags$style(HTML("#essentialityHelp {color: blue}"))),
+                tags$head(tags$style(HTML("#geneTrackHelp {color: blue}"))),
                 tags$head(tags$style(HTML("a {color: gray}"))),
                 
                 
@@ -130,7 +145,7 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                 
                 
                 
-                titlePanel("RNA Sequencing Post Processing"),
+                titlePanel("PostSeq - RNA Sequencing Post Processing"),
                 
                 tabsetPanel(id = "allTabs", type = "tabs",
                             
@@ -141,47 +156,34 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                        sidebarPanel(
                                          conditionalPanel(condition = "input.check.data[1] == true",
                                                           div(style = "color: red;","Please switch to Chrome for full functionality")),
-                                         strong("Provide the experimental inputs and the desired mode of analysis"),
                                          
-                                         br(),
                                          br(),
                                          
                                          textInput("projectName", label = "Project Name"),
                                          
-                                         checkboxInput("mysqlUpload", "Check to upload differential expression results to MySQL database"),
+                                         hr(),
                                          
-                                         conditionalPanel(condition = "input.mysqlUpload == 1",
-                                         textInput("projectID", label = "Unique Project ID"),
-                                         textAreaInput("projectDescr", label = "Project Description", resize = "vertical"),
-                                         dateInput("projectDate", label = "Project Date")
+                                         strong("Sequencing Data Source"),
+                                         
+                                         conditionalPanel(condition = "input.uploadCore == 0 && input.uploadSelf == 0",
+                                                          checkboxInput("convertBam", "Check if uploading BAM files (Long wait times)", value = FALSE)
                                          ),
                                          
-                                         selectInput("species", label = "Species of Samples", choices = 
-                                                       list(Human = "hsapiens_gene_ensembl", Mouse = "mmusculus_gene_ensembl"), selected = "Human"),
-                                         
-                                         
-                                         selectInput("nomenclature", label = "Input Format", choices =
-                                                       list(Ensembl = "ensembl_gene_id",  HGNC_Symbol = "hgnc_symbol", Entrez = "entrezgene_id", MGI = 'mgi_symbol')),
+                                         conditionalPanel(condition = "input.convertBam == 0 && input.uploadSelf == 0",
+                                                          checkboxInput("uploadCore", "Check if uploading excel sheet from the IUSM Bioinformatics Core", value = FALSE)
+                                         ),
                                          
                                          conditionalPanel(condition = "input.convertBam == 0 && input.uploadCore == 0",
-                                         checkboxInput("pickMysql", label = "Check to retrieve information from previous run")
-                                         ),
-                                         
-                                         conditionalPanel(condition = "input.pickMysql == 0 && input.uploadCore == 0",
-                                         checkboxInput("convertBam", "Check if uploading BAM files (Long wait times)", value = FALSE)
-                                         ),
-                                         
-                                         conditionalPanel(condition = "input.convertBam == 0 && input.pickMysql == 0",
-                                                          checkboxInput("uploadCore", "Check if uploading counts file from the core")
+                                         checkboxInput("uploadSelf", "Check if uploading personal counts file", value = FALSE)
                                          ),
                                          
                                          
                                          br(),
                                          
-                                         conditionalPanel(condition = "input.convertBam == 0", 
-                                         div(style = "height: 75px;",
-                                             fileInput("fileSelectExpr", label = "Gene Counts File")
-                                         )),
+                                         conditionalPanel(condition = "input.convertBam == 0 && ((input.uploadSelf == 1) || (input.uploadCore == 1))", 
+                                                          div(style = "height: 75px;",
+                                                              fileInput("fileSelectExpr", label = "Gene Counts File")
+                                                          )),
                                          
                                          conditionalPanel(condition = "input.convertBam == 1", 
                                                           div(style = "height: 75px;",
@@ -191,11 +193,23 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                          
                                          actionLink("helpLink", label = "Need Help?"),
                                          
+                                         br(),
+                                         
                                          conditionalPanel(condition = "input.convertBam == 1", 
-                                         downloadButton("bamCounts", label = "Download counts from BAM")
+                                                          downloadButton("bamCounts", label = "Download counts from BAM"),
+                                                          div(style = "color: red;", "Conversion and Download in Progress", id = "bamMessage"),
+                                                          div(style = "color: green;", "Process Complete!", id = "bamComplete"),
+                                                          tags$script(JS("$('#bamMessage').toggle()")),
+                                                          tags$script(JS("$('#bamComplete').toggle()"))
                                          ),
-                                        
-                                          
+                                         
+                                         hr(),
+                                         
+                                         strong("Method of Input for Experimental Design"),
+                                         
+                                         
+                                         
+                                         
                                          fluidRow(column(width = 5,
                                                          div(id = "compCheckBox",
                                                              checkboxInput("expEntryMode", "Input Experiment Design Manually", value = TRUE), style = "font-style:bold;")
@@ -210,9 +224,11 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                          ),
                                          conditionalPanel(condition = "input.expEntryMode == 1 ",
                                                           
+                                                          strong("Manual Design Entry Options"),
                                                           conditionalPanel(condition = "input.convertBam == 0", 
-                                                          checkboxInput("sampleGuess", "Let me autofill sample data from counts file")
+                                                                           checkboxInput("sampleGuess", "Let me autofill sample data from counts file")
                                                           ),
+                                                          
                                                           div(id = "insertGuessLocation"),
                                                           
                                                           numericInput("nSamples", "Number of Samples:", value = 1, min = 1),
@@ -223,49 +239,96 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                          
                                          div(id = "compFileInput"),
                                          
+                                         actionLink("designHelp", label = "Need Help?"),
                                          
-                                         checkboxInput("advancedToggle", "Show Advanced Parameters", value = FALSE),
+                                         hr(),
+                                         strong("Classification Information for Input Data"),
+                                         br(),
                                          
-                                         conditionalPanel(condition = "input.advancedToggle == 1",
-                                                          sliderInput("minCutoff", label = "Filter genes with counts below:", min = 0, max = 200, value = 1)
-                                                          
-                                                          
-                                                          
+                                         selectInput("species", label = "Species of Samples", choices = 
+                                                       list(Human = "hsapiens_gene_ensembl", Mouse = "mmusculus_gene_ensembl"), selected = "Human"),
+                                         
+                                         
+                                         selectInput("nomenclature", label = "Gene Annotation Format of Input", choices =
+                                                       list(HGNC_Symbol = "hgnc_symbol", Ensembl = "ensembl_gene_id", Entrez = "entrezgene_id", MGI = 'mgi_symbol')),
+                                         
+                                         actionLink("classHelp", label = "Need Help?"),
+                                         
+                                         hr(),
+                                         strong("MySQL Upload Information"),
+
+                                         checkboxInput("mysqlUpload", "Check to upload completed analysis results to MySQL database"),
+                                         
+                                         conditionalPanel(condition = "input.mysqlUpload == 1",
+                                                          textInput("projectID", label = "Unique Project ID"),
+                                                          textInput("labName", label = "Lab Name"),
+                                                          textAreaInput("projectDescr", label = "Project Description", resize = "vertical"),
+                                                          dateInput("projectDate", label = "Project Date")
                                          ),
                                          
+                                         actionLink("mysqlHelp", label = "Need Help?"),
                                          
-                                         checkboxGroupInput("outputParameters", "Select files to include in output:", choiceNames = 
-                                                              c("Differential Expression - Limma", "Pathway Analysis - CAMERA", "Principal Component Analysis", "Volcano Plot"), choiceValues =
-                                                              c("DE", "PA", "PCA", "VP")),
+                                         #conditionalPanel(condition = "input.convertBam == 0 && input.uploadCore == 0",
+                                         #checkboxInput("pickMysql", label = "Check to retrieve information from previous run")
+                                         #),
                                          
+                                         hr(),
+
+                                         checkboxGroupInput("outputParameters", strong("Select types of analysis to perform:"), choiceNames = 
+                                                              c("Differential Expression - Limma", "Pathway Analysis - CAMERA", "Pathway Analysis - GO", "Principal Component Analysis", "Volcano Plot"), choiceValues =
+                                                              c("DE", "PA", "GO", "PCA", "VP")),
+                                         
+                                         hr(),
                                          
                                          conditionalPanel(condition = "input.outputParameters.includes('DE')",
-                                                          checkboxInput("clusterCheck", "Include CSV of gene clustering effects (Execution Time >= 30 min)", value = FALSE),
+                                                          strong("Differential Expression Options"),
+                                                          checkboxInput("clusterCheck", "Perform additional analysis to find clusters in expression data (Execution Time >= 30 min)", value = FALSE),
+                                                          checkboxInput("advancedToggle", "Show Advanced Parameters", value = FALSE),
+                                                          
+                                                          conditionalPanel(condition = "input.advancedToggle == 1",
+                                                                           sliderInput("minCutoff", label = "Filter genes with counts below:", min = 0, max = 200, value = 1)
+                                                          ),
+                                                          
                                                           conditionalPanel(condition = "input.clusterCheck == 1",
+                                                                           hr(),
+                                                                           strong("Clustering Analysis Options"),
                                                                            numericInput("maxClusterDistance", "Maximum distance between two genes in cluster (bp)", min = 0, value = 1000000),
                                                                            sliderInput("minClusterLogFC", "Minimum logFC magnitude", min = 0, max = 10, value = 1),
                                                                            sliderInput("maxClusterFDR", "FDR cutoff", min = 0, max = 1, value = .05),
                                                                            sliderInput("minClusterGenes", "Minimum number of genes to consider a cluster", min = 3, max = 25, value = 3)
-                                                                           )
+                                                                           ),
+                                                          hr()
                                                           ),
                                          
                                          conditionalPanel(condition = "input.outputParameters.includes('PA')",
+                                                          strong("Pathway Analysis - CAMERA Options"),
                                                           checkboxGroupInput("databaseSelect", "Database(s) for pathway analysis:", choiceNames = c("c1","c2 (recommended)", "H"), choiceValues = c("c1","c2","H")),
                                                           strong("Additional outputs to include"),
                                                           checkboxInput("wordClouds", "Wordclouds"),
-                                                          checkboxInput("barGraphs", "Inclusion/Exclusion Bar Graphs")
+                                                          checkboxInput("barGraphs", "Inclusion/Exclusion Bar Graphs"),
+                                                          hr()
                                          ),
                                          
-                                         conditionalPanel(condition = "input.barGraphs == 1", 
-                                                          checkboxInput("autoBars", "Check to upload CSV of desired inclusion/exclusion charts"),
-                                                          checkboxInput("barPDF", "Include CSV of inclusion/exclusion data in output"),
-                                                          checkboxInput("overlapCloud", "Include wordclouds of overlap data (Experimental feature. Use at your own risk.)")
+                                         conditionalPanel(condition = "input.outputParameters.includes('GO')",
+                                                          strong("Pathway Analysis - GO Options"),
+                                                          checkboxGroupInput("subOntSelect", "Subontologies for GO Analysis", choiceNames = c("Biological Process", "Cellular Component", "Molecular Function"), choiceValues = c("BP", "CC", "MF")),
+                                                          hr()
                                                           ),
-                                                          
                                          
+                                         conditionalPanel(condition = "input.barGraphs == 1",
+                                                          strong("Inclusion/Exclusion Chart Options"),
+                                                          checkboxInput("autoBars", "Check to upload CSV of desired inclusion/exclusion charts instead of manually entering bar graph comparisons to right"),
+                                                          checkboxInput("barPDF", "Include list of all pathways in inclusion/exclusion analysis in csv"),
+                                                          checkboxInput("overlapCloud", "Include wordclouds of overlap data (Experimental feature. Use at your own risk.)"),
+                                                          
+                                                          
                                          conditionalPanel(condition = "input.autoBars == 1",
                                                           fileInput("barUpload", "Desired inclusion/exclusion charts")
                                          ),
+                                         
+                                         actionLink("overlapHelp", label = "Need Help?"),
+                                         
+                                         hr()),
                                          
                                          
                                          downloadButton("submitButton", label = "Run and Save Analysis"),
@@ -273,7 +336,10 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                          div(style = "color: red;", "Analysis started. May take several minutes.", id = "downloadMessage"),
                                          div(style = "color: green;", "Analysis complete! Files Downloaded.", id = "downloadComplete"),
                                          tags$script(JS("$('#downloadMessage').toggle()")),
-                                         tags$script(JS("$('#downloadComplete').toggle()"))
+                                         tags$script(JS("$('#downloadComplete').toggle()")),
+                                         
+                                         br(),
+                                         actionLink("outputHelp", label = "Need Help?")
                                          
                                          
                                          
@@ -320,8 +386,6 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                                                                                              uiOutput("compSamples"),
                                                                                                              actionButton("clearBars", "Clear")),
                                                                                                         downloadButton("makeBarComps", "Save Configuration")
-                                                                                                        
-                                                                                                        
                                                                                                       )
                                                                                                       
                                                                                                       
@@ -366,11 +430,19 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                        dataTableOutput("searchData"),
                                        
                                        uiOutput("searchDownload"),
+                                       
+                                       div(style = "color: red;", "Program is formatting requested files", id = "inputMessage"),
+                                       div(style = "color: green;", "Files Downloaded!", id = "inputComplete"),
+                                       tags$script(JS("$('#inputMessage').toggle()")),
+                                       tags$script(JS("$('#inputComplete').toggle()")),
                                       
                                        plotOutput("geneTracks", width = "100%"),
                                        
-                                       uiOutput("trackDownload")
+                                       uiOutput("trackDownload"),
                                        
+                                       conditionalPanel(condition = "input.searchMode == 'GeneTracks'",
+                                        actionLink("geneTrackHelp", label = "Need Help?")
+                                       )
                                        
                                      )
                                    
@@ -386,9 +458,8 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                        div(style = "color: red;", "Analysis started. May take several minutes.", id = "chromMessage"),
                                        div(style = "color: green;", "Analysis complete! Files Downloaded.", id = "chromComplete"),
                                        tags$script(JS("$('#chromMessage').toggle()")),
-                                       tags$script(JS("$('#chromComplete').toggle()"))
-                                       
-                                       
+                                       tags$script(JS("$('#chromComplete').toggle()")),
+                                       actionLink("posChromChartHelp", label = "Need Help?")
                                      )
                                      ),
                             
@@ -404,7 +475,7 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                        dataTableOutput("eGeneInputTable"),
                                        tags$div(align = "left", class = "multicol",
                                        checkboxGroupInput("eCellLineInput",
-                                                          "Select cell lines to include",
+                                                          strong("Select cell lines to include"),
                                                           choices = c("Bone", "Breast",
                                                                           "Central_Nervous_System",
                                                                           "Cervix", "Endometrium",
@@ -415,11 +486,15 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                                                           "Small_intestine", "Soft_tissue",
                                                                           "Stomach", "Upper_aerodigestive_tract",
                                                                           "Urinary_tract"), inline = FALSE)),
-                                       downloadButton("corDownload", "Submit and Download"),
+                                       conditionalPanel(condition = "input.eGeneInput",
+                                       downloadButton("corDownload", "Submit and Download")),
+                                       conditionalPanel(condition = "!input.eGeneInput", 
+                                                        strong("Must enter gene to compare against before starting analysis")),
                                        div(style = "color: red;", "Analysis started. May take several minutes.", id = "essMessage"),
                                        div(style = "color: green;", "Analysis complete! Files Downloaded.", id = "essComplete"),
                                        tags$script(JS("$('#essMessage').toggle()")),
-                                       tags$script(JS("$('#essComplete').toggle()"))
+                                       tags$script(JS("$('#essComplete').toggle()")),
+                                       actionLink("essentialityHelp", label = "Need Help?")
                                        
                                      )
                                      
@@ -429,6 +504,8 @@ ui <- fluidPage(theme = shinytheme("simplex"),
                                      wellPanel(
                                        
                                        strong(h1("Instructions and Reference")),
+                                       strong(h2("Note: For detailed instructions, visit the github page at ")),
+                                       tags$a(href="https://github.com/SwellsHub/PostSeq", "https://github.com/SwellsHub/PostSeq"),
                                        hr(),
                                        fluidRow(
                                          div( class = "col-12 col-lg-6",
@@ -509,21 +586,28 @@ server <- function(input,output, session) {
     #Processing for Essentiality Tab
     if(input$allTabs == "essentiality" | input$allTabs == "mysql") {
     
-      if(input$searchMode == "GeneTracks") {
-        removeUI(selector = "#searchInputsDownload")
-        removeUI(selector = "#trackDownloadButton")
-        removeUI(selector = "#trackDownload")
-        removeUI(selector = "#searchData")
+      if(input$allTabs == "mysql" & input$searchMode == "GeneTracks") {
+          removeUI(selector = "#searchInputsDownload")
+          shinyjs::hide("searchData")
+          shinyjs::show("geneTracks")
+          shinyjs::show("trackDownload")
+        } else {
+          shinyjs::hide("geneTracks")
+          shinyjs::hide("trackDownload")
+          shinyjs::show("searchData")
       }
+      
       
       pool <- dbPool(drv = RMariaDB::MariaDB(), user = "root", password = "wellslab123",
                      dbname = "shinyApp", host = "localhost", port = 3306)
       
-      query <- paste0("SELECT p.ProjectAlias
+      query <- paste0("SELECT p.ProjectID, p.ProjectAlias
                     FROM shinyApp.ProjectDetails p;")
       
       
       displayData <- dbGetQuery(pool, query)
+      displayData <- displayData[order(displayData$ProjectID),,drop = FALSE]
+      row.names(displayData) <- 1:nrow(displayData)
       
       if(globalCounter == 1) {
       #DT::renderDataTable(relevantResults, selection = list(mode = "single", selected = 1)
@@ -556,7 +640,7 @@ server <- function(input,output, session) {
         }
       }
       
-      query <- paste0("SELECT s.ComparisonName
+      query <- paste0("SELECT s.Comparison, s.ComparisonName
                     FROM shinyApp.DiffExp s
                     LEFT JOIN (shinyApp.ProjectDetails p)
                     ON s.ProjectID = p.ProjectID
@@ -564,6 +648,8 @@ server <- function(input,output, session) {
                     GROUP BY s.ComparisonName;")
       
       displayDataComp <- dbGetQuery(pool, query)
+      displayDataComp <- displayDataComp[order(displayDataComp$Comparison),,drop = FALSE]
+      row.names(displayDataComp) <- 1:nrow(displayDataComp)
       
       if(globalCompCounter == 1) {
         if(input$allTabs == "essentiality") {
@@ -618,7 +704,7 @@ server <- function(input,output, session) {
     }
     
     
-    if((!(is.null(input$fileSelectExpr) & is.null(input$bamInputs)) && !is.null(input$outputParameters)) && !("PA" %in% input$outputParameters && is.null(input$databaseSelect)) && !((is.null(input$fileSelectComp)) && (input$expEntryMode == 0))) {
+    if((!(is.null(input$fileSelectExpr) & is.null(input$bamInputs)) && !is.null(input$outputParameters)) && !(("PA" %in% input$outputParameters | "GO" %in% input$outputParameters) && (is.null(input$databaseSelect) && is.null(input$subOntSelect))) && !((is.null(input$fileSelectComp)) && (input$expEntryMode == 0))) {
       
       shinyjs::enable("submitButton")
       
@@ -683,9 +769,58 @@ server <- function(input,output, session) {
   
   observeEvent(input$helpLink, {
     
-    updateTabsetPanel(session, "allTabs", selected = "instructions")
+   shinyalert(title = "Sequencing Data Upload", text = "<div align = 'left'> There are three ways to upload your sequencing data! <br/><br/> <strong>1.</strong>Upload a csv formatted like the above image <br/> (Rows - GeneID, Columns - Sample, Body - Raw Counts) <br/> <strong>2.</strong> Upload an IUSM core excel sheet <br/> <strong>3.</strong>Upload BAM files<br/><br/> When uploading BAM files, be sure to download the generated counts file for future usage so you won't have to ever reupload the BAM files!</div>", closeOnClickOutside = TRUE, imageUrl = "sampleCountsFile.png", imageWidth = 400, imageHeight = 300, html = TRUE)
     
   })
+  
+  observeEvent(input$designHelp, {
+    
+    shinyalert(title = "Experimental Design", text = "<div align = 'left'> You can enter experimental design manually through the app or through an uploaded excel spreadsheet. <br/> <br/> 1. To manually enter experimental data, first check the fill samples from counts checkbox to populate the sample boxes at the right of the page. <br/> <br/> 2. Next, in the groups column, assign a group name to each sample. <br/> <br/> 3. Finally, in the comparisons column, indicate how many comparisons you want in the Number of Comparisons input then write each comparison in the form <br/> `control-condition`. <br/> <br/> After manually inputting the design once, a csv in the format of the above image will be generated by clicking save configuration button. This csv can be uploaded for all future runs of this data.", html = TRUE, closeOnClickOutside = TRUE, imageWidth = 400, imageHeight = 300, imageUrl = "sampleDesignFile.png")
+    
+  })
+  
+  observeEvent(input$classHelp, {
+    
+    shinyalert(title = "Classification Info", text = "Select the classification data that corresponds to your input data. <br/> <br/> First, select the species, this can be human or mouse. <br/> <br/> Second, select the gene annotation format. This can be hgnc_symbol, ensembl_gene_id, entrez_id, or mgi_symbol. <br/> <br/> Note: all outputs will use hgnc_symbol", html = TRUE, closeOnClickOutside = TRUE)
+    
+  })
+  
+  observeEvent(input$mysqlHelp, {
+    
+    shinyalert(title = "MySQL Upload Information", text = "You can choose to upload your inputs and analysis to a MySQL database if you want to access your inputs easily in the future and perform extended analysis. <br/> <br/> If you choose to upload to the databse, you must input a project ID, lab name, description, and project date", html = TRUE, closeOnClickOutside = TRUE)
+    
+  })
+  
+  observeEvent(input$overlapHelp, {
+    
+    shinyalert(title = "Inclusion/Exclusion Analysis Info", text = "This analysis lets you can compare and contrast the pathways in each comparison. <br/> <br/>Drag and drop groups into boxes on the right side of the app. Each box represents a group of comparisons that will be compared to each other. Overlaps are computed similar to what you would expect from a Venn Diagram <br/> <br/>If you want detailed csvs with the specific pathways in each overlap, check the 'include a list' checkbox.", html = TRUE, closeOnClickOutside = TRUE)
+    
+  })
+  
+  observeEvent(input$outputHelp, {
+    
+    shinyalert(title = "Output Info", text = "The final step before submitting your analysis is choosing your outputs. After selecting one of the inital outputs, additional options and outputs will appear to configure. <br/> <br/> For a more detailed breakdown of all the outputs and options, check the GitHub page at <a href = 'https://github.com/SwellsHub/PostSeq'>https://github.com/SwellsHub/PostSeq</a>", html = TRUE, closeOnClickOutside = TRUE)
+    
+  })
+  
+  observeEvent(input$geneTrackHelp, {
+    
+    shinyalert(title = "Gene Track Info", text = "You can select a project, comparison, and gene and get back LogFC data for the three neighboring genes to the left and right of the target gene.", html = TRUE, closeOnClickOutside = TRUE)
+    
+  })
+  
+  observeEvent(input$posChromChartHelp, {
+    
+    shinyalert(title = "Chromosome Chart Info", text = "You can upload ranges and get back a chart that maps that range on the chromosomes. <br/> <br/> Upload a csv with three columns containing the positional information for each range. The first column should be chromosome name, the second column should be start position, the third column should be end position.", html = TRUE, closeOnClickOutside = TRUE)
+    
+  })
+  
+  observeEvent(input$essentialityHelp, {
+    
+    shinyalert(title = "Essentiality Analysis Info", text = "Choose a project, comparison, gene, and cell line(s) to cross compare essentiality data with expression data. <br/> <br/> The program will rank order genes that have a high correlation of essentiality with the selected gene and high LogFC. Pathway analysis is then performed on the rank ordered gene list, and the pairwise comparisons are ranked.", html = TRUE, closeOnClickOutside = TRUE)
+    
+  })
+  
   
   observeEvent(input$sampleGuess, {
     
@@ -729,6 +864,7 @@ server <- function(input,output, session) {
     
     
     if(input$searchMode == "ProjectDetails") {
+      removeUI(selector = "#geneTracks")
             query <- paste0("SELECT DISTINCT p.ProjectID, p.ProjectAlias, p.ProjectDescr, p.ProjectDate 
                     FROM shinyApp.ProjectDetails p
                     LEFT JOIN (shinyApp.DiffExp s)
@@ -741,6 +877,7 @@ server <- function(input,output, session) {
             output$searchData <- DT::renderDataTable(relevantResults, selection = list(mode = "single", selected = 1),
             )
     } else if(input$searchMode == "DiffExp"){
+      removeUI(selector = "#geneTracks")
             query <- paste0("SELECT GeneID, LogFC, ProjectAlias 
                     FROM shinyApp.DiffExp s
                     LEFT JOIN (shinyApp.ProjectDetails p)
@@ -773,9 +910,12 @@ server <- function(input,output, session) {
       
       relevantResults$Significance <- rep("FDR>.05", nrow(relevantResults))
       relevantResults[relevantResults$adj.P.Val < .05, colnames(relevantResults) == "Significance"] <- "FDR<.05"
-      
       index <- which(relevantResults$GeneID == toupper(input$dataSearch))
-      
+      if(length(index) == 0) {
+        shinyalert("Bad News", "That gene could not be found in the selected comparison. Check for typos, or try a different gene", type = "error")
+        
+      }
+      else{
       relevantResults <- relevantResults[c((index-3):(index+3)),c(1,2,4,5, ncol(relevantResults))]
       
       relevantResults$GeneID <- factor(relevantResults$GeneID, levels = relevantResults$GeneID)
@@ -827,28 +967,33 @@ server <- function(input,output, session) {
                                                 annotation_custom(annotDistances[[6]])
     }, width = 707, height = 400)
       
-      
+      }
       
     }
     if(input$searchMode == "ProjectDetails") {
+      removeUI(selector = "#geneTracks")
+      removeUI(selector = "#trackDownload")
       output$searchDownload <- renderUI(
         downloadButton("searchInputsDownload", "Download Project Inputs (~3 min)")
       )
-      removeUI(selector = "#trackDownload")
+
+     
     } else if(input$searchMode == "DiffExp") {
       
       removeUI(selector = "#trackDownload")
+      removeUI(selector = "#geneTracks")
     }
     else if(input$searchMode == "GeneTracks"){
       output$trackDownload <- renderUI(
         downloadButton("trackDownloadButton", "Download picture of track")
       )
-      removeUI(selector = "#searchData")
+      shinyjs::hide("searchData")
     } else {
       removeUI(selector = "#searchInputsDownload")
       removeUI(selector = "#trackDownloadButton")
       removeUI(selector = "#trackDownload")
       removeUI(selector = "#searchData")
+      #removeUI(selector = "#geneTracks")
     }
   })
   
@@ -1007,7 +1152,7 @@ server <- function(input,output, session) {
   output$compSamples <- renderUI({
     if(((input$expEntryMode == 0) && (!is.null(input$fileSelectComp))) || ((input$expEntryMode == 1) && (input$compInput.1 != ""))) {
       div(id = "compsPanel0", style = "border-style: solid; border-width: 2px; border-color: lightgrey;",
-          orderInput('comparisons0', div(strong('Comparison 1'), style="font-size: 125%;"), items = NULL, placeholder = "Drag comparisons here", connect = "source")
+          orderInput('comparisons0', div(strong('Graph 1'), style="font-size: 125%;"), items = NULL, placeholder = "Drag comparisons here", connect = "source")
       )
       
     }
@@ -1066,7 +1211,9 @@ server <- function(input,output, session) {
             
             insertUI(selector = selectorId, where = "afterEnd",
                      ui = div(id = panelId, style = "border-style: solid; border-width: 2px; border-color: lightgrey;",
-                              orderInput(ordInput, label = div(strong(paste0("Comparison ", checkN$checkNumber + 2)), style="font-size: 125%;"), items = NULL, placeholder = "Drag comparisons here", connect = "source")
+                              orderInput(ordInput, label = div(strong(paste0("Graph ", checkN$checkNumber + 2)),
+                                                               style="font-size: 125%;"), items = NULL,
+                                         placeholder = "Drag comparisons here", connect = "source")
                      )
             )
             
@@ -1144,7 +1291,7 @@ server <- function(input,output, session) {
     
     insertUI(selector = "#sourcePanel", where = "afterEnd", ui =
                div(id = "compsPanel0", style = "border-style: solid; border-width: 2px; border-color: lightgrey;",
-                   orderInput('comparisons0', div(strong('Comparison 1'), style="font-size: 125%;"), items = NULL, placeholder = "Drag comparisons here", connect = "source")))
+                   orderInput('comparisons0', div(strong('Graph 1'), style="font-size: 125%;"), items = NULL, placeholder = "Drag comparisons here", connect = "source")))
     
     
     
@@ -1171,6 +1318,7 @@ server <- function(input,output, session) {
     
     content = function(file) {
       
+      shinyalert(title = "Analysis Started", text = "Analysis has started. Do not attempt any other processes within the app until analysis has finished. Analysis may take several minutes", closeOnClickOutside = TRUE)
       rv$download_flag <- rv$download_flag + 1
       
       if(rv$download_flag == 1) {
@@ -1204,6 +1352,12 @@ server <- function(input,output, session) {
         
       }
       
+      if(!identical(row.names(expDesign), colnames(geneCounts)[2:ncol(geneCounts)])) {
+        shinyalert("Bad News", "The sample names in your counts and experimental design file don't match! Fix this and rerun the analysis", type = "error")
+        shinyjs::toggle("downloadMessage")
+        break;
+      } 
+      
       if(input$barPDF == 1) {
           makePDFs = TRUE
         } else {
@@ -1213,13 +1367,18 @@ server <- function(input,output, session) {
       if(input$barGraphs == 1) {
         
         if(input$autoBars == 1) {
-          barDesign <- read.table(
-            input$barUpload$datapath,
-            header = FALSE,
-            sep = ",",
-            row.names = NULL
-          )
-          barDesign <- barDesign[2:nrow(barDesign),]
+          if(!is.null(input$barUpload)) {
+            barDesign <- read.table(
+              input$barUpload$datapath,
+              header = FALSE,
+              sep = ",",
+              row.names = NULL
+            )
+            barDesign <- barDesign[2:nrow(barDesign),]
+          } else {
+            shinyalert("Bad News", "You tried to do an inclusion exclusion analysis without inputting any comparisons for the graphs. Either upload an inclusion/exclusion csv or drag comparisons into the graphs on the right side of the app and rerun.", type = "error")
+            shinyjs:toggle("downloadMessage")
+          }
           
         } else if(input$autoBars == 0) {
           barDesign <- makeBarCSV()
@@ -1244,51 +1403,57 @@ server <- function(input,output, session) {
       
       if(input$mysqlUpload == 1) {
         
-        
+
         pool <- dbPool(drv = RMariaDB::MariaDB(), user = "root", password = "wellslab123",
                        dbname = "shinyApp", host = "localhost", port = 3306)
         
-        #Get total number of projects
-        query <- "SELECT COUNT(*) FROM shinyApp.ProjectDetails;"
-        nProjects <- dbGetQuery(pool, query)
-        #Flatten counts file and experimental design file
-        countStore <- c()
-        countStore[[1]] <- colnames(geneCounts)
-        countStore[[1]] <- paste(unlist(countStore[[1]]), collapse = ";")
+        #Check if project is already in database
+        query <- "SELECT ProjectAlias FROM shinyApp.ProjectDetails;"
+        projectNames <- dbGetQuery(pool, query)
         
-        countStore[[2]] <- geneCounts[,1]
-        countStore[[2]] <- paste(unlist(countStore[[2]]), collapse = ";")
-        
-        countStore[[3]] <- geneCounts[,2:ncol(geneCounts), drop = TRUE]
-        countStore[[3]] <- paste(unlist(countStore[[3]]), collapse = ";")
-        
-        countStoreFlat <- paste(countStore[[1]], countStore[[2]], countStore[[3]], collapse = ",")
-        
-        #countStoreFlat <- c()
-        #countStoreFlat[[1]] <- countStore
-        
-        expStore <- c()
-        expStore[[1]] <- row.names(expDesign)
-        expStore[[1]] <- paste(unlist(expStore[[1]]), collapse = ";")
-        
-        expStore[[2]] <- expDesign[,1]
-        expStore[[2]] <- paste(unlist(expStore[[2]]), collapse = ";")
-        
-        expStore[[3]] <- expDesign[,2]
-        expStore[[3]] <- paste(unlist(expStore[[3]]), collapse = ";")
-        
-        expStoreFlat <- paste(expStore[[1]], expStore[[2]], expStore[[3]], collapse = ",")
-        
-        #Prepare project details to be uploaded into mysql table
-        projectDetails <- c((as.character(nProjects[1,1]+1)),input$projectID,
-                            input$projectDescr, as.character(input$projectDate[[1]]), countStoreFlat, expStoreFlat)
-        projectDetails <- data.frame(projectDetails)
-        projectDetails <- data.table::transpose(projectDetails)
-        colnames(projectDetails) <- c("ProjectID", "ProjectAlias", "ProjectDescr", "ProjectDate", "Counts", "ExpDesign")
-        
-        #Add project details to database
-        pool::dbWriteTable(pool, name = "ProjectDetails", value = projectDetails, append = TRUE)
-        
+        if(!(input$projectID %in% projectNames$ProjectAlias)) {
+          
+          #Get total number of projects
+          query <- "SELECT COUNT(*) FROM shinyApp.ProjectDetails;"
+          nProjects <- dbGetQuery(pool, query)
+          #Flatten counts file and experimental design file
+          countStore <- c()
+          countStore[[1]] <- colnames(geneCounts)
+          countStore[[1]] <- paste(unlist(countStore[[1]]), collapse = ";")
+          
+          countStore[[2]] <- geneCounts[,1]
+          countStore[[2]] <- paste(unlist(countStore[[2]]), collapse = ";")
+          
+          countStore[[3]] <- geneCounts[,2:ncol(geneCounts), drop = TRUE]
+          countStore[[3]] <- paste(unlist(countStore[[3]]), collapse = ";")
+          
+          countStoreFlat <- paste(countStore[[1]], countStore[[2]], countStore[[3]], collapse = ",")
+          
+          #countStoreFlat <- c()
+          #countStoreFlat[[1]] <- countStore
+          
+          expStore <- c()
+          expStore[[1]] <- row.names(expDesign)
+          expStore[[1]] <- paste(unlist(expStore[[1]]), collapse = ";")
+          
+          expStore[[2]] <- expDesign[,1]
+          expStore[[2]] <- paste(unlist(expStore[[2]]), collapse = ";")
+          
+          expStore[[3]] <- expDesign[,2]
+          expStore[[3]] <- paste(unlist(expStore[[3]]), collapse = ";")
+          
+          expStoreFlat <- paste(expStore[[1]], expStore[[2]], expStore[[3]], collapse = ",")
+          
+          #Prepare project details to be uploaded into mysql table
+          projectDetails <- c((as.character(nProjects[1,1]+1)),input$labName, input$projectID,
+                              input$projectDescr, as.character(input$projectDate[[1]]), countStoreFlat, expStoreFlat)
+          projectDetails <- data.frame(projectDetails)
+          projectDetails <- data.table::transpose(projectDetails)
+          colnames(projectDetails) <- c("ProjectID", "LabName", "ProjectAlias", "ProjectDescr", "ProjectDate", "Counts", "ExpDesign")
+          
+          #Add project details to database
+          pool::dbWriteTable(pool, name = "ProjectDetails", value = projectDetails, append = TRUE)
+        }
         poolClose(pool)
       }
       
@@ -1318,7 +1483,7 @@ server <- function(input,output, session) {
         
         if("DE" %in% input$outputParameters) {
           dir.create(paste0(allFilesDir, "/DifferentialExpression"))  
-          file.move(diffExpFiles[[1]], paste0(allFilesDir, "/DifferentialExpression"))
+          file.copy(diffExpFiles[[1]], paste0(allFilesDir, "/DifferentialExpression"))
         }
         if("VP" %in% input$outputParameters) {
           dir.create(paste0(allFilesDir, "/VolcanoPlots"))
@@ -1348,48 +1513,93 @@ server <- function(input,output, session) {
         }
       }
         
-      if("PA" %in% input$outputParameters) {
+      
+      
+      if("PA" %in% input$outputParameters | "GO" %in% input$outputParameters) {
         
         if(input$barGraphs == 0) {
           barDesign = ""
         } else {
           barCharts <- c()
-          ieCSVs = c()
+          ieCSVs <- c()
+          overlapCommons <- c()
+          pairwiseOverlapRnks <- c()
         }
         
+        if(length(input$databaseSelect) == 0) {
+          PAIter <- 1
+        } else {
+          PAIter <- length(input$databaseSelect)
+        }
         
-        for(x in 1:length(input$databaseSelect)) {
+        for(x in 1:PAIter) {
           pathwayFiles = c()
-          
-          paAllFiles <- PathwayAnalysis(input$species,input$nomenclature,geneCounts, expDesign, input$databaseSelect[x], input$minCutoff, barDesign, makePDFs)
-          
-          pathwayFiles = c(paAllFiles[[1]], pathwayFiles)
-          
-          dir.create(paste0(allFilesDir, "/PathwayAnalysis"))
-          
-          file.move(pathwayFiles, paste0(allFilesDir, "/PathwayAnalysis"))
-          
-          if(input$barGraphs == 1) {
-            browser()
-            dir.create(paste0(allFilesDir, "/InclusionExclusion"))
-            if(length(paAllFiles) == 3) {
-            barCharts <- c(paAllFiles[[3]], barCharts)
-            ieCSVs <- c(paAllFiles[[2]], ieCSVs)
+          goFiles <- c()
+          if(x == 1) {
+            if("GO" %in% input$outputParameters) {
+              for(j in 1:length(input$subOntSelect)) {
+                if("PA" %in% input$outputParameters) {
+              paAllFiles <- PathwayAnalysis(input$species,input$nomenclature,geneCounts, expDesign, input$databaseSelect[x], input$minCutoff, barDesign, makePDFs, TRUE, input$subOntSelect[j])
+                if(stri_cmp_eq(paAllFiles, "error")) {
+                    #shinyalert("Bad News", "You wanted to do inclusion/exclusion analysis but included too few comparisons. Add more comparisons and rerun!", type = "error", closeOnClickOutside = TRUE)
+                }
+              } else {
+                  paAllFiles <- PathwayAnalysis(input$species,input$nomenclature,geneCounts, expDesign, "c2", input$minCutoff, barDesign, makePDFs, TRUE, input$subOntSelect[j])
+                  if(stri_cmp_eq(paAllFiles, "error")) {
+                    #shinyalert("Bad News", "You wanted to do inclusion/exclusion analysis but included too few comparisons. Add more comparisons and rerun!", type = "error", closeOnClickOutside = TRUE)
+                  }
+                  }
+              goFiles <- c(paAllFiles$fourth)
+              dir.create(paste0(allFilesDir, "/GOPathwayAnalysis"))
+              file.move(goFiles, paste0(allFilesDir, "/GOPathwayAnalysis"))
+              }
             } else {
-              barCharts <- c(paAllFiles[[2]], barCharts)
+              paAllFiles <- PathwayAnalysis(input$species,input$nomenclature,geneCounts, expDesign, input$databaseSelect[x], input$minCutoff, barDesign, makePDFs, FALSE, "NA")
+              if(stri_cmp_eq(paAllFiles, "error")) {
+
+                #shinyalert("Bad News", "You wanted to do inclusion/exclusion analysis but included too few comparisons. Add more comparisons and rerun!", type = "error", closeOnClickOutside = TRUE)
+              }
+              }
+          } else {
+            paAllFiles <- PathwayAnalysis(input$species,input$nomenclature,geneCounts, expDesign, input$databaseSelect[x], input$minCutoff, barDesign, makePDFs, FALSE, "NA")
+            if(stri_cmp_eq(paAllFiles, "error")) {
+    
+              #shinyalert("Bad News", "You wanted to do inclusion/exclusion analysis but included too few comparisons. Add more comparisons and rerun!", type = "error", closeOnClickOutside = TRUE)
             }
-            file.move(barCharts, paste0(allFilesDir, "/InclusionExclusion"))
-          }
-          
-          if(makePDFs == TRUE) {
-            if(length(paAllFiles) == 3) {
-            dir.create(paste0(allFilesDir, "/IECSVs"))
-            file.move(ieCSVs, paste0(allFilesDir, "/IECSVs"))
             }
-          }
           
+          if("PA" %in% input$outputParameters) {
+            pathwayFiles = c(paAllFiles[[1]], pathwayFiles)
+            
+            dir.create(paste0(allFilesDir, "/PathwayAnalysis"))
+            
+            file.copy(pathwayFiles, paste0(allFilesDir, "/PathwayAnalysis"))
+            
+            if(input$barGraphs == 1) {
+              dir.create(paste0(allFilesDir, "/InclusionExclusion"))
+              if(makePDFs) {
+              barCharts <- c(paAllFiles[[3]], barCharts)
+              ieCSVs <- c(paAllFiles[[2]], ieCSVs)
+              
+              }
+            
+              file.copy(barCharts, paste0(allFilesDir, "/InclusionExclusion"))
+            }
+            
+            if(makePDFs == TRUE) {
+              overlapCommons <- c(overlapCommons, paAllFiles$fifth)
+              dir.create(paste0(allFilesDir, "/IECSVs"))
+              file.copy(ieCSVs, paste0(allFilesDir, "/IECSVs"))
+              dir.create(paste0(allFilesDir, "/PairwiseClusters"))
+              file.copy(overlapCommons, paste0(allFilesDir, "/PairwiseClusters"))
+              
+              pairwiseOverlapRnks <- c(pairwiseOverlapRnks, paAllFiles$sixth)
+              dir.create(paste0(allFilesDir, "/PairwiseClusters/Rankings"))
+              file.copy(pairwiseOverlapRnks, paste0(allFilesDir, "/PairwiseClusters/Rankings"))
+            }
+            
+          }
         }
-        
       }
       if("PCA" %in% input$outputParameters) {
         pcaPlot <- MakePCA(geneCounts, expDesign)
@@ -1417,6 +1627,7 @@ server <- function(input,output, session) {
         
       }
       
+      shinyalert(title = "Analysis Complete", text = "The analysis is complete! You will now be prompted to download the output files", closeOnClickOutside = TRUE, type = "success")
       zip(file, allFilesDir)
       shinyjs::toggle("downloadMessage")
       shinyjs::toggle("downloadComplete")
@@ -1440,7 +1651,6 @@ server <- function(input,output, session) {
     
     content <- function(file) {
       expArray <- makeDesign()
-      browser()
       write.csv(expArray, file, row.names = TRUE, na = "")
     }
   )
@@ -1455,6 +1665,8 @@ server <- function(input,output, session) {
     },
     
     content <- function(file) {
+      
+      shinyjs::toggle("inputMessage")
       
       if(is.null(input$searchData_row_last_clicked)) {
         inputSelect <- 1
@@ -1512,6 +1724,10 @@ server <- function(input,output, session) {
       #Create output directory
       dir.create(projInputFiles)
       
+      #Display Message indicating download completion
+      shinyjs::toggle("inputMessage")
+      shinyjs::toggle("inputComplete")
+      
       #Set output file names
       countsFileName <- paste0(projectName, "Counts.csv")
       expDesignName <- paste0(projectName, "ExpDesign.csv")
@@ -1534,12 +1750,16 @@ server <- function(input,output, session) {
   
   
   makeDesign <- function() {
-    browser()
     expArray <- matrix(ncol = 3, nrow = input$nSamples)
     for(i in 1:2) {  
       for(x in 1:input$nSamples) {
         if(i == 1) {
           sampleId <- paste0("sampleInput." ,x)
+          if(input[[sampleId]] == "") {
+            shinyalert("Bad News", "You didn't input any comparison data! Fill in the samples, groups, and comparisons to the right and rerun the analysis", type = "error")
+            shinyjs::toggle("downloadMessage")
+            break;
+            }
           expArray[x,i] <- input[[sampleId]]
           
         } else if(i == 2) {
@@ -1587,7 +1807,10 @@ server <- function(input,output, session) {
     },
     
     content <- function(file) {
+    shinyjs::toggle("bamMessage")
     geneCounts <- getCounts()
+    shinyjs::toggle("bamMessage")
+    shinyjs::toggle("bamComplete")
     write.csv(geneCounts, file, row.names = TRUE, na = "")
       
       
@@ -1598,6 +1821,11 @@ server <- function(input,output, session) {
   
   
   makeBarCSV <- function() {
+    
+    if(checkN$checkNumber == 0) {
+      shinyalert("Bad News", "You tried to do an inclusion exclusion analysis without inputting any comparisons for the graphs. Either upload an inclusion/exclusion csv or drag comparisons into the graphs on the right side of the app and rerun.", type = "error")
+      shinyjs:toggle("downloadMessage")
+    }
     
     for(x in 0:checkN$checkNumber) {
       necComps$necComp[[x+1]] <- list(input[[(paste0("comparisons", x, "_order"))]])
@@ -1739,6 +1967,9 @@ server <- function(input,output, session) {
       shinyjs::toggle("essMessage")
       unlink("EssentialityAnalysis", recursive = TRUE)
       corData <- EssentialityClusters(input$eProjInput, input$eCompInput, input$eGeneInput, input$eCellLineInput)
+      if(stri_cmp_eq(corData, "error")) {
+        shinyjs::toggle("essMessage")
+      } else {
       corCloud <- MakeWordClouds(blackList, Modifiers, corData[[1]], FALSE)
       #Process complete, generate necessary files
       shinyjs::toggle("essComplete")
@@ -1747,7 +1978,7 @@ server <- function(input,output, session) {
       file.move(corData, "EssentialityAnalysis")
       file.move(corCloud, "EssentialityAnalysis")
       zip(file, "EssentialityAnalysis")
-      
+      }
     },
     
     contentType = "application/zip"

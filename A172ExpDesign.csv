@@ -1,0 +1,13 @@
+Sample,Group,Comparison
+shScramble_2D.1_S30.1,shScramble2D,shScramble2D-shAmotL12D
+shScramble_2D.2_S31.1,shScramble2D,shScramble3D-shAmotL13D
+shScramble_2D.3_S32.1,shScramble2D,shScramble2D-shScramble3D
+shAmotL1_2D.1_S33.1,shAmotL12D,shAmotL12D-shAmotL13D
+shAmotL1_2D.2_S34.1,shAmotL12D,shScramble2D-shAmotL13D
+shAmotL1_2D.3_S35.1,shAmotL12D,shAmotL12D-shScramble3D
+shScramble_3D.1_S36.1,shScramble3D,
+shScramble_3D.2_S37.1,shScramble3D,
+shScramble_3D.3_S38.1,shScramble3D,
+shAmotL1_3D.1_S39.1,shAmotL13D,
+shAmotL1_3D.2_S40.1,shAmotL13D,
+shAmotL1_3D.3_S41.1,shAmotL13D,

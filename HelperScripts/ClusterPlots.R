@@ -15,6 +15,7 @@ ClusteringHistograms <- function(clusterFiles) {
   for(i in 1:length(clusterFiles)) {
     file <- read.table(clusterFiles[i], header = TRUE, sep = ',', row.names = 1)
     
+    
     #Format the file for the histogram
     
     #Initialize Vector of Averages and Gene Counter Vector
@@ -78,9 +79,7 @@ ClusterChromosomeCharts <- function(clusterFiles, geneCounts) {
   library(chromoMap)
   library(webshot)
   browser()
-  #clusterFiles <- list.files("/home/wells/Documents/A172NeighborsAllDataallFiles/ClusteringEffects")
   #Initialize list of files to return
-  #setwd("/home/wells/Documents/A172NeighborsAllDataallFiles/ClusteringEffects")
   returnList <- c()
   
   #Iterate over files to generate plots

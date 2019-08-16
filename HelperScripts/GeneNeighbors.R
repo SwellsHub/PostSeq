@@ -23,8 +23,11 @@ ClusterInfo <- function(diffExpFileNames, maxDistance, minLogFC, maxFDR, minGene
     file <- file[,!(colnames(file) == "AveExpr"|| colnames(file) == "t" || colnames(file) == "P.Value")]
     
     #Filter the file to only include values within the user-specified cutoffs
-    file <- file[abs(file$logFC) >= minLogFC,, drop = FALSE]
-    file <- file[file$adj.P.Val <= maxFDR,, drop = FALSE]
+    file <- file[as.numeric(abs(file$logFC)) >= minLogFC,, drop = FALSE]
+    file <- file[as.numeric(file$adj.P.Val) <= maxFDR,, drop = FALSE]
+    
+    row.names(file) <- file[,1]
+    file <- file[,2:ncol(file)]
     
     #Preallocate Clustering matrix
     clustersTable <- matrix(nrow = 10000, ncol = 5000)

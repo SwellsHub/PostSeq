@@ -3,7 +3,7 @@
 #1 August 2019
 
 ChromPlot <- function(chromMap) {
-
+browser()
 #Import Necessary Package
 library(chromoMap)
 
@@ -23,7 +23,7 @@ chromMap$placeHolder <- as.character(chromMap$placeHolder)
 chromMap$V1 <- as.character(chromMap$V1)
 chromMap$V2 <- as.character(chromMap$V2)
 chromMap$V3 <- as.character(chromMap$V3)
-chromMap$V1 <- sub("^...", "", chromMap$V1)
+#chromMap$V1 <- sub("^...", "", chromMap$V1)
 colnames(chromMap)[2:3] <- c("chromosome_name", "start_position")
 
 

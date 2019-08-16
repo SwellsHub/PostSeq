@@ -32,7 +32,7 @@ for (p in 1:length(file.names)) {
   }
   
   if(!doingOverlaps) {
-  file <- file[file$FDR < .25,]
+  file <- file[as.nuemric(file$FDR) < .25,]
   if(nrow(file[file$Direction == "Up", ]) == 0 || nrow(file[file$Direction == "Down", ]) == 0) {
     file <- read.table(file.names[p], header = TRUE, sep = ",", row.names = NULL)
     
@@ -40,7 +40,7 @@ for (p in 1:length(file.names)) {
       colnames(file)[[1]] <- "names"
     }
     
-    file <- file[file$FDR < .25,]
+    file <- file[as.numeric(file$FDR) < .25,]
   }
   file1 <- file[order(file$names), , drop = FALSE]
   }
@@ -371,7 +371,7 @@ for (p in 1:length(file.names)) {
     }
     
     if(!doingOverlaps) {
-      file <- file[file$FDR < .25,]
+      file <- file[as.numeric(file$FDR) < .25,]
       if(nrow(file[file$Direction == "Up", ]) == 0 || nrow(file[file$Direction == "Down", ]) == 0) {
         file <- read.table(file.names[p], header = TRUE, sep = ",", row.names = NULL)
         
@@ -379,7 +379,7 @@ for (p in 1:length(file.names)) {
           colnames(file)[[1]] <- "names"
         }
         
-        file <- file[file$FDR < .25,]
+        file <- file[as.numeric(file$FDR) < .25,]
       }
       file1 <- file[order(file$names), , drop = FALSE]
     }
