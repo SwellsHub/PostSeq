@@ -87,6 +87,7 @@ If you are uploading BAM files, choose all bam files to be processed after selec
 <img src = "www/sampleCountsFile.png" align = "left" height="500px" width="750px">
 
 <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br />
+<br /> <br /> <br /> <br /> <br /> <br />
 
 **Experimental Design Generation**
 
@@ -105,7 +106,7 @@ Selecting "Let me autofill sample data" will automatically populate the sample n
 Now that your main inputs are sorted, you need to choose the classifiers that match your input data. Choose the species and gene annotation that match your sequencing data. If your counts are from a BAM file, your annotation format will be "HGNC_Symbol".
 Currently supported species are human and mouse, and currently supported annotation formats are Ensembl_gene_id, hgnc_symbol, entrezid, and MGI symbol.
 
-<br /> <br /> <br />
+<br /> <br /> <br /> <br /> <br />
 
 **Choosing Whether to Upload to MySQL**
 
