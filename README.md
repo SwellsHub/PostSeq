@@ -104,6 +104,7 @@ If you are uploading BAM files, choose all bam files to be processed after selec
 
 <img src = "www/sampleCountsFile.png" align = "left" height="500px" width="800px">
 <br />
+
 **Experimental Design Generation**
 
 After uploading your sequence data, it is time to generate your experimental design (design matrix).
@@ -111,7 +112,7 @@ Selecting "Let me autofill sample data" will automatically populate the sample n
 
 **Example Experimental Design File**
 
-<img src = "www/sampleDesignFile.png" align = "left" height="500px" width="800px">
+<img src = "www/sampleDesignFile.png" align = "left" height="500px" width="600px">
 <br />
 
 **Selecting Classifiers**
