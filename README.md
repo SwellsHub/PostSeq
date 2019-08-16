@@ -101,15 +101,18 @@ If you are uploading BAM files, choose all bam files to be processed after selec
 "choose all BAM files to upload" file input. Please note that due to the size of BAM files, this upload process will take some time. Once Bam files have been uploaded, the generated counts file can be downloaded so the BAM files will not have to be uploaded in future analysis.
 
 **Example Counts File**
-<img src = "www/sampleCountsFile.png" align = "left" height="500px" width="600px">
 
+<img src = "www/sampleCountsFile.png" align = "left" height="500px" width="800px">
+<br />
 **Experimental Design Generation**
 
 After uploading your sequence data, it is time to generate your experimental design (design matrix).
 Selecting "Let me autofill sample data" will automatically populate the sample names boxes on the right side of the app with the column names from your counts file. This is recommended as it avoids any naming inconsistencies between the counts and experimental design file. If you wish to input samples manually, modify the "Number of Samples" numeric input and then enter each sample name in the sample names boxes. Note that the sample names in these boxes and your counts file must match **exactly**!
 
 **Example Experimental Design File**
-<img src = "www/sampleDesignFile.png" align = "left" height="500px" width="600px"}
+
+<img src = "www/sampleDesignFile.png" align = "left" height="500px" width="800px">
+<br />
 
 **Selecting Classifiers**
 
