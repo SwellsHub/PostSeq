@@ -1667,7 +1667,7 @@ server <- function(input,output, session) {
     content <- function(file) {
       
       shinyjs::toggle("inputMessage")
-      
+      shinyalert(title = "Analysis Started", text = "Analysis has started. Do not attempt any other processes within the app until analysis has finished. Analysis may take several minutes", closeOnClickOutside = TRUE)
       if(is.null(input$searchData_row_last_clicked)) {
         inputSelect <- 1
       } else {
@@ -1727,6 +1727,7 @@ server <- function(input,output, session) {
       #Display Message indicating download completion
       shinyjs::toggle("inputMessage")
       shinyjs::toggle("inputComplete")
+      shinyalert(title = "Analysis Complete", text = "The analysis is complete! You will now be prompted to download the output files", closeOnClickOutside = TRUE, type = "success")
       
       #Set output file names
       countsFileName <- paste0(projectName, "Counts.csv")
@@ -1965,6 +1966,7 @@ server <- function(input,output, session) {
     
     content <- function(file) {
       shinyjs::toggle("essMessage")
+      shinyalert(title = "Analysis Started", text = "Analysis has started. Do not attempt any other processes within the app until analysis has finished. Analysis may take several minutes", closeOnClickOutside = TRUE)
       unlink("EssentialityAnalysis", recursive = TRUE)
       corData <- EssentialityClusters(input$eProjInput, input$eCompInput, input$eGeneInput, input$eCellLineInput)
       if(stri_cmp_eq(corData, "error")) {
@@ -1974,6 +1976,7 @@ server <- function(input,output, session) {
       #Process complete, generate necessary files
       shinyjs::toggle("essComplete")
       shinyjs::toggle("essMessage")
+      shinyalert(title = "Analysis Complete", text = "The analysis is complete! You will now be prompted to download the output files", closeOnClickOutside = TRUE, type = "success")
       dir.create("EssentialityAnalysis")
       file.move(corData, "EssentialityAnalysis")
       file.move(corCloud, "EssentialityAnalysis")
