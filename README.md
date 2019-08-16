@@ -37,6 +37,8 @@
   </p>
 </p>
 
+![Screenshot](Screenshots/PostSeqHome.png)
+
 
 
 <!-- TABLE OF CONTENTS -->
@@ -59,7 +61,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-PostSeq is a webapp hosted at 134.68.250.10:3838/shinyApp which increases the effciency and approachability of RNAseq analysis.
+PostSeq is a webapp hosted at [134.68.250.10:3838/shinyApp](134.68.250.10:3838/shinyApp) which increases the effciency and approachability of RNAseq analysis.
 PostSeq allows you to complete differential expression, PCA, pathway analysis and more through a streamlined graphical interface that requires no coding.
 
 Additionally, PostSeq allows you to upload your sequencing data to a MySQL database where it can be retrieved or further analyzed at any time.
@@ -75,7 +77,7 @@ PostSeq is built in Shiny, a popular package used to build webapps with R code. 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-PostSeq can be accessed with no installation at 134.68.250.10:3838/shinyApp . This is the recommended way to use the app and allows you to access all functionalities of the program. 
+PostSeq can be accessed with no installation at [134.68.250.10:3838/shinyApp](134.68.250.10:3838/shinyApp) . This is the recommended way to use the app and allows you to access all functionalities of the program. 
 
 If you want to host a local instance of PostSeq, the setup process consists of launching a shiny server on your own linux server and populating it with the files in this Repo. Detailed instructions on how to install and maintain a shiny server can be found at [https://docs.rstudio.com/shiny-server/](https://docs.rstudio.com/shiny-server/)
 
@@ -98,10 +100,16 @@ If you are uploading a personal counts file, it needs to be a csv with the first
 If you are uploading BAM files, choose all bam files to be processed after selecting the uploading BAM files checkbox and the 
 "choose all BAM files to upload" file input. Please note that due to the size of BAM files, this upload process will take some time. Once Bam files have been uploaded, the generated counts file can be downloaded so the BAM files will not have to be uploaded in future analysis.
 
+**Example Counts File**
+![Alt text](www/sampleCountsFile.png?raw=true "Example Counts File"){:height="300px" width="500px"}
+
 **Experimental Design Generation**
 
 After uploading your sequence data, it is time to generate your experimental design (design matrix).
 Selecting "Let me autofill sample data" will automatically populate the sample names boxes on the right side of the app with the column names from your counts file. This is recommended as it avoids any naming inconsistencies between the counts and experimental design file. If you wish to input samples manually, modify the "Number of Samples" numeric input and then enter each sample name in the sample names boxes. Note that the sample names in these boxes and your counts file must match **exactly**!
+
+**Example Experimental Design File**
+![Alt text](www/sampleDesignFile.png?raw=true "Example Experimental Design File"){:height="300px" width="500px"}
 
 **Selecting Classifiers**
 
@@ -162,22 +170,29 @@ These options and secondary analysis are described here and grouped by their res
 After uploading data to MySQL, you can query your data and perform extended analysis. For querying, you can go the MySQL tab of the app and search for project details as well as LogFC information. When you select a project, you can use the 'download project inputs' button to generate a counts file and experimental design file, which can then be re-uploaded to the program to perform additional analaysis. Also, the following two kinds of extended analysis can be performed on data directly in the database:
 
   **Gene Tracks**
+  
   By selecting the 'Gene Tracks' mode of analysis in the MySQL tab of the app, you can generate a bar graph which shows the expression level of a target gene in a selected project and comparison as well as the three closest genes to the left and right of the target gene. The bars will be black if the gene is expressed with an FDR < 0.05. The distances between each gene in base pairs is printed between the bars.
   
+  **Gene Tracks Menu**
+  ![Screenshot](Screenshots/PostSeqGene.png)
+  
   **Essentiality Analysis**
+  
   This analysis compares LogFC expression data with the essentiality data of the Broad Institute's Project Achilles. After selecting a target gene from a selected comparison and project as well as one or more target cell lines, the program will compute a pearson correlation coefficient between the pattern of essentiality in all genes against the target gene in the selected cell lines. It will then form a weighted metric for each gene, combining the Pearson score with the LogFC, and it will give this rank ordered list to CAMERA to perform preranked pathway analysis. The following outputs will be generated from this analysis:
   * CAMERA csv: This is the standard csv produced by CAMERA with the rank ordered gene list described above as the input
   * Distribution Graph: This is a png of LogFC vs Pearson Correlation coefficient for all genes in the experiment
   * Wordclouds: wordclouds will be generated from the pathway analysis in the same way they are generated from the main pipeline.
   
 ## Positional Analysis
+
 In the chromoplot tab of the app, you can input a csv with three columns (chromosome name, start position, end position) and generate chromosome plots of the ranges you specified with the chromoMap package
 
 
 ### Manual Installation Prerequisites
+
 The general process for manually installing postseq is installing a shiny server on a linux computer and copying the repository files to the /srv/shiny-server directory. That being said, due to file size limitations, a few necessary files had to be excluded from the repository. If you want the full functionality of PostSeq on your local installation, you'll need to download the following files:
-  * GTF Files: To align BAM files to counts, you will need GTF files for human and mouse. These can be obtained at [https://www.gencodegenes.org](https://www.gencodegenes.org)
-  * Project Achilles File: To perform essentiality analysis, you will need the essentiality data from the Broad Institute, which can be downloaded using [this](https://depmap.org/portal/download/api/download/external?file_name=15%2FExpandedGeneZSolsCleaned.csv) link
+  * GTF Files: To align BAM files to counts, you will need GTF files for human and mouse. These can be obtained at [https://www.gencodegenes.org](https://www.gencodegenes.org). You should place these files in the data directory of PostSeq.
+  * Project Achilles File: To perform essentiality analysis, you will need the essentiality data from the Broad Institute, which can be downloaded using [this link.](https://depmap.org/portal/download/api/download/external?file_name=15%2FExpandedGeneZSolsCleaned.csv) You should place this file in the root directory of PostSeq.
 
 ### Manual Installation
 The main step of deploying PostSeq is installing shiny-server on your machine. Shiny-server is currently only supported on Linux, and detailed installation instructions can be found [here](https://docs.rstudio.com/shiny-server/)
@@ -186,12 +201,15 @@ Once your shiny server is installed, you will need to start R as the user shiny 
 
 ```
 su - shiny
+
 R
+
 install.packages(c("shiny", "quantmod", "shinythemes", "shinyjs", "htmlwidgets", "readr", "readxl", "shinyjqui", "DBI", "pool", "data.table", "tidyverse", "DT", "grid", "Rsubread", "ggplot2", "filesstrings", "tools", "shinyalert", "stringi", "xml2", "UpSetR", "textclean", "tm", "SnowballC", "wordcloud", "RColorBrewer", "RCurl", "XML", "dplyr", "ggpubr"))
+
 if (!requireNamespace("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
   
- BiocManager::install(c("limma", "DESeq2", "edgeR", "CAMERA", "biomaRt", "apeglm", "chromoMap", "systemPipeR", "mzR", "Glimma", "clusterProfiler", "org.Hs.eg.db"))
+BiocManager::install(c("limma", "DESeq2", "edgeR", "CAMERA", "biomaRt", "apeglm", "chromoMap", "systemPipeR", "mzR", "Glimma", "clusterProfiler", "org.Hs.eg.db"))
 ```
 
 After installing all the prerequisite packages, make sure the Shiny user has all the necessary permissions to access the /srv/shiny-server folder. Once this is done, you can start the shiny server and access it at your local ip/configured DNS.
