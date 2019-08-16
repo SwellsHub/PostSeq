@@ -1,24 +1,4 @@
-<!--
-*** Thanks for checking out this README Template. If you have a suggestion that would
-*** make this better, please fork the repo and create a pull request or simply open
-*** an issue with the tag "enhancement".
-*** Thanks again! Now go create something AMAZING! :D
--->
 
-
-.fullWidth {
-  width: 100%;
-}
-
-
-<!-- PROJECT SHIELDS -->
-<!--
-*** I'm using markdown "reference style" links for readability.
-*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
-*** See the bottom of this document for the declaration of the reference variables
-*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
-*** https://www.markdownguide.org/basic-syntax/#reference-style-links
--->
 
 [![MIT License][license-shield]][license-url]
 
@@ -104,9 +84,9 @@ If you are uploading BAM files, choose all bam files to be processed after selec
 
 **Example Counts File**
 
-<img src = "www/sampleCountsFile.png" align = "left" height="500px" width="800px">
+<img src = "www/sampleCountsFile.png" align = "left" height="500px" width="750px">
 
-<br /> <br /> <br /> <br /> <br /> <br />
+<br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br /> <br />
 
 **Experimental Design Generation**
 
@@ -119,10 +99,13 @@ Selecting "Let me autofill sample data" will automatically populate the sample n
 <br />
 </div>
 
+
 **Selecting Classifiers**
 
 Now that your main inputs are sorted, you need to choose the classifiers that match your input data. Choose the species and gene annotation that match your sequencing data. If your counts are from a BAM file, your annotation format will be "HGNC_Symbol".
 Currently supported species are human and mouse, and currently supported annotation formats are Ensembl_gene_id, hgnc_symbol, entrezid, and MGI symbol.
+
+<br /> <br /> <br />
 
 **Choosing Whether to Upload to MySQL**
 
