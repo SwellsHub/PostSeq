@@ -6,7 +6,9 @@
 -->
 
 
-
+.fullWidth {
+  width: 100%;
+}
 
 
 <!-- PROJECT SHIELDS -->
@@ -102,10 +104,9 @@ If you are uploading BAM files, choose all bam files to be processed after selec
 
 **Example Counts File**
 
-<div style = "width: 100%">
 <img src = "www/sampleCountsFile.png" align = "left" height="500px" width="800px">
-<br />
-</div>
+
+<br /> <br /> <br /> <br /> <br /> <br />
 
 **Experimental Design Generation**
 
@@ -113,7 +114,7 @@ After uploading your sequence data, it is time to generate your experimental des
 Selecting "Let me autofill sample data" will automatically populate the sample names boxes on the right side of the app with the column names from your counts file. This is recommended as it avoids any naming inconsistencies between the counts and experimental design file. If you wish to input samples manually, modify the "Number of Samples" numeric input and then enter each sample name in the sample names boxes. Note that the sample names in these boxes and your counts file must match **exactly**!
 
 **Example Experimental Design File**
-<div style = "width: 100%">
+<div class = "fullWidth "style="width: 100%; height: 500px">
 <img src = "www/sampleDesignFile.png" align = "left" height="500px" width="600px">
 <br />
 </div>
