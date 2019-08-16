@@ -128,6 +128,34 @@ These options and secondary analysis are described here and grouped by their res
       * MaxDistance: Maximum distance between two genes in a cluster (base pairs) 
       * MaxFDR: Only consider genes with an FDR at or below this value
       * MinLogFC: Only consider genes with a LogFC magnitude (absolute value) at or above this value
+      
+ 2. Pathway Analysis - CAMERA
+  * Options:
+    * Database Select: Choose which databases to perform pathway analysis on. You have the following three options:
+      * c1: Positional data
+      * c2: Large set of many pathway from MSigdb database
+      * H: Hallmark - curated set of just a few pathways
+  * Secondary Analysis
+    * Wordclouds: The program will rank order the words in the pathway analysis csv and create a wordcloud of the most common ones (after some filtering of extraneous words)
+    * Inclusion/Exclusion Analysis: You will compare the overlaps in the pathways affected in multiple comparisons. You determine what pathways you want compared to each other by dragging the generated boxes on the right side of the screen to containers. Each container represents a set of comparisons that will be tested for overlaps similar to a Venn diagram. The inclusion/exclusion analysis produces the following outputs:
+      * Bar graphs: Bar graphs are made with the UpSetR package and function like venn diagrams. There is a legend below the bars to represent what overlap each bar represents
+      * csv of the pathways: This will show a matrix of 0s and 1s where pathways affected in a given comparison will be labelled with a 1 and unaffected pathways will be labelled with a 0.
+      * Pairwise Comparisons: The program will take all the pairwise comparisons between treatments and calculate which comparisons have the most similar set of the pathways. A csv will be returned that lists these comparisons in order of similarity
+      * Pairwise Rankings: The program will return a csv with a quantitative metric of the measured similiarity for all pairwise comparisons
+      
+ 3. Pathway Analysis - GO
+  * Options
+    * Subontology Select: You can select what subontology go performs pathway analysis on. You can choose from the following three options:
+      * Biological Process
+      * Cellular Component
+      * Molecular Function
+      
+ 4. Principal Component Analysis
+  * Returns a png that groups your samples based on PCA and colors them based on their group in the experimental design file
+  
+ 5. Volcano Plot
+  * Returns a plot of -Log10FDR vs LogFC and color codes genes either red, blue, or gray depending on the gene being up, down, or insignificant
+  
 
 
 ### Manual Installation Prerequisites
