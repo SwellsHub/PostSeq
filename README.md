@@ -43,7 +43,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-PostSeq is a webapp hosted at [134.68.250.10:3838/shinyApp](https://134.68.250.10:3838/shinyApp) which increases the effciency and approachability of RNAseq analysis.
+PostSeq is a webapp which increases the effciency and approachability of RNAseq analysis.
 PostSeq allows you to complete differential expression, PCA, pathway analysis and more through a streamlined graphical interface that requires no coding.
 
 Additionally, PostSeq allows you to upload your sequencing data to a MySQL database where it can be retrieved or further analyzed at any time.
@@ -59,7 +59,7 @@ PostSeq is built in Shiny, a popular package used to build webapps with R code. 
 <!-- GETTING STARTED -->
 ## Getting Started
 
-PostSeq can be accessed with no installation at [134.68.250.10:3838/shinyApp](https://134.68.250.10:3838/shinyApp). This is the recommended way to use the app and allows you to access all functionalities of the program. 
+The main instance of PostSeq is currently hosted through the IU biochemistry department. If you want access to the app, please contact me directly.
 
 If you want to host a local instance of PostSeq, the setup process consists of launching a shiny server on your own linux server and populating it with the files in this Repo. Detailed instructions on how to install and maintain a shiny server can be found at [https://docs.rstudio.com/shiny-server/](https://docs.rstudio.com/shiny-server/)
 
